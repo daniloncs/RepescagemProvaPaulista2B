@@ -1,33 +1,49 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Controle de Repescagem - Prova Paulista</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
+    body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+    #logo { max-width: 300px; margin-bottom: 10px; }
+    h1 { margin-bottom: 5px; }
+    h2, h3 { margin-top: 5px; margin-bottom: 10px; }
     button { margin: 5px; padding: 10px 20px; cursor: pointer; }
-    table { border-collapse: collapse; width: 100%; margin-top: 15px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
-    #totais { margin-top: 10px; font-weight: bold; }
+    table { border-collapse: collapse; width: 100%; margin-top: 15px; text-align: left; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background-color: #f2f2f2; cursor: pointer; }
+    #totais { margin-top: 10px; font-weight: bold; text-align: left; }
+    .feito { background-color: #e0ffe0; }
+    .icone-ok { color: green; font-weight: bold; margin-left: 5px; }
+    #conteudo { max-width: 900px; margin: 0 auto; text-align: left; }
   </style>
 </head>
 <body>
-  <h1>Controle de Repescagem - Prova Paulista (2º Bimestre)</h1>
-  <div>
-    <button onclick="carregarTurno('Manhã', '683273509')">Manhã</button>
-    <button onclick="carregarTurno('Tarde', '1245077396')">Tarde</button>
-    <button onclick="carregarTurno('Noite', '1843066211')">Noite</button>
+  <div id="conteudo">
+    <img id="logo" src="prova-paulista.png.png" alt="Logo Prova Paulista" />
+    <h1>Controle de Repescagem - Prova Paulista</h1>
+    <h2>2º Bimestre</h2>
+    <h3>E.E. Professor Estephano Orlando Paulovski</h3>
+
+    <div>
+      <button onclick="carregarTurno('Manhã', '683273509')">Manhã</button>
+      <button onclick="carregarTurno('Tarde', '1245077396')">Tarde</button>
+      <button onclick="carregarTurno('Noite', '1843066211')">Noite</button>
+    </div>
+    <h2 id="tituloTurno">Selecione um turno</h2>
+    <div id="totais"></div>
+    <div id="tabela"></div>
   </div>
-  <h2 id="tituloTurno">Selecione um turno</h2>
-  <div id="totais"></div>
-  <div id="tabela"></div>
 
   <script>
     const PLANILHA_ID = "1u1e-2zyJgQcIFS_KQiEcpSsovf9CA0lc";
+    let dadosAtuais = [];
+    let ordemAscendente = true;
+    let turnoAtual = "";
 
     function carregarTurno(turno, gid) {
       document.getElementById("tituloTurno").innerText = `Turno: ${turno}`;
+      turnoAtual = turno;
       const url = `https://docs.google.com/spreadsheets/d/${PLANILHA_ID}/gviz/tq?tqx=out:json&tq=&gid=${gid}`;
 
       fetch(url)
@@ -36,26 +52,53 @@
           const json = JSON.parse(data.substring(47).slice(0, -2));
           const linhas = json.table.rows;
 
-          let html = `<table><tr><th>Nome do Aluno</th><th>Turma</th><th>OK?</th></tr>`;
-          let pendentes = 0;
+          dadosAtuais = linhas.slice(1).map(l => ({
+            nome: l.c[0]?.v || "",
+            turma: l.c[1]?.v || "",
+            ok: l.c[2]?.v || ""
+          }));
 
-          linhas.forEach(l => {
-            const nome = l.c[0]?.v || "";
-            const turma = l.c[1]?.v || "";
-            const ok = l.c[2]?.v || "";
-
-            if (!ok.trim()) pendentes++;
-
-            html += `<tr><td>${nome}</td><td>${turma}</td><td>${ok}</td></tr>`;
-          });
-
-          html += `</table>`;
-          document.getElementById("tabela").innerHTML = html;
-          document.getElementById("totais").innerText = `Total de alunos pendentes no turno ${turno}: ${pendentes}`;
+          exibirTabela();
         })
         .catch(err => {
           document.getElementById("tabela").innerHTML = `<p style='color:red'>Erro ao carregar os dados: ${err}</p>`;
         });
+    }
+
+    function exibirTabela() {
+      let html = `<table>
+        <thead><tr>
+          <th onclick="ordenarPor('nome')">Nome do Aluno</th>
+          <th onclick="ordenarPor('turma')">Turma</th>
+          <th onclick="ordenarPor('ok')">OK?</th>
+        </tr></thead><tbody>`;
+
+      let pendentes = 0;
+      dadosAtuais.forEach(l => {
+        const okTexto = l.ok.trim();
+        const classeLinha = okTexto ? "feito" : "";
+        const okComIcone = okTexto ? `${okTexto} <span class='icone-ok'>✔️</span>` : "";
+
+        if (!okTexto) pendentes++;
+
+        html += `<tr class="${classeLinha}"><td>${l.nome}</td><td>${l.turma}</td><td>${okComIcone}</td></tr>`;
+      });
+
+      html += `</tbody></table>`;
+      document.getElementById("tabela").innerHTML = html;
+      document.getElementById("totais").innerText = `Total de alunos pendentes no turno ${turnoAtual}: ${pendentes}`;
+    }
+
+    function ordenarPor(coluna) {
+      dadosAtuais.sort((a, b) => {
+        const valA = a[coluna].toUpperCase();
+        const valB = b[coluna].toUpperCase();
+        if (valA < valB) return ordemAscendente ? -1 : 1;
+        if (valA > valB) return ordemAscendente ? 1 : -1;
+        return 0;
+      });
+      ordemAscendente = !ordemAscendente;
+      exibirTabela();
     }
   </script>
 </body>
