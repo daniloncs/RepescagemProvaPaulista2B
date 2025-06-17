@@ -89,9 +89,10 @@
         } else if (okTexto !== "") {
           classeLinha = "atencao";
           conteudoOk = okTextoOriginal;
+          pendentes++; // não é "ok", então ainda conta como pendente
         } else {
-          pendentes++;
           conteudoOk = "";
+          pendentes++; // está vazio, também é pendente
         }
 
         html += `<tr class="${classeLinha}">
