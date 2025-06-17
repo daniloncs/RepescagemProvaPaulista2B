@@ -14,7 +14,6 @@
     th { background-color: #f2f2f2; cursor: pointer; }
     #totais { margin-top: 10px; font-weight: bold; text-align: left; }
     .feito { background-color: #e0ffe0; }
-    .atencao { background-color: #fff9c4; }
     .icone-ok { color: green; font-weight: bold; margin-left: 5px; }
     #conteudo { max-width: 900px; margin: 0 auto; text-align: left; }
   </style>
@@ -75,30 +74,14 @@
         </tr></thead><tbody>`;
 
       let pendentes = 0;
-
       dadosAtuais.forEach(l => {
-        const okTextoOriginal = l.ok || "";
-        const okTexto = okTextoOriginal.trim().toLowerCase();
+        const okTexto = l.ok.trim();
+        const classeLinha = okTexto ? "feito" : "";
+        const okComIcone = okTexto ? `${okTexto} <span class='icone-ok'>✔️</span>` : "";
 
-        let classeLinha = "";
-        let conteudoOk = "";
+        if (!okTexto) pendentes++;
 
-        if (okTexto === "ok") {
-          classeLinha = "feito";
-          conteudoOk = `OK <span class='icone-ok'>✔️</span>`;
-        } else if (okTexto !== "") {
-          classeLinha = "atencao";
-          conteudoOk = okTextoOriginal;
-        } else {
-          pendentes++;
-          conteudoOk = "";
-        }
-
-        html += `<tr class="${classeLinha}">
-          <td>${l.nome}</td>
-          <td>${l.turma}</td>
-          <td>${conteudoOk}</td>
-        </tr>`;
+        html += `<tr class="${classeLinha}"><td>${l.nome}</td><td>${l.turma}</td><td>${okComIcone}</td></tr>`;
       });
 
       html += `</tbody></table>`;
